@@ -38,7 +38,7 @@ from pathlib import Path as _Path
 _PROJECT_ROOT = _Path(__file__).resolve().parent
 
 # ---- 1. EXPERIMENT ----
-EXPERIMENT_MODE = "supervised"      # "supervised" | "zero-shot"
+EXPERIMENT_MODE = "zero-shot"      # "supervised" | "zero-shot"
 STRATEGY_NAME   = "exponential"     # "baseline" | "clamped" | "exponential"
 DN_VARIANT      = "new"             # "old" (DNv1) | "new" (DNv2 U-Net)
 SEED            = 42
@@ -49,7 +49,7 @@ LEARNING_RATE   = 1e-4
 BATCH_SIZE      = 16
 IMAGE_SIZE      = (256, 256)
 TIMESTEPS       = 1000
-MAX_TRAIN_HOURS = 10.0
+MAX_TRAIN_HOURS = 120
 NUM_WORKERS     = 2
 
 # ---- 3. LOSS ----
@@ -1287,7 +1287,12 @@ def validate(val_dataloader, scheduler, pcn, dn,
                     total_inv_count += int(valid_inv.sum().item())
 
     if cfg["FORK_RNG_VALIDATION"]:
-        fork_devices = [device.index] if device.type == "cuda" else []
+        if device.type == "cuda":
+            cur_idx = device.index if device.index is not None else torch.cuda.current_device()
+            fork_devices = [cur_idx]
+        else:
+            fork_devices = []
+
         with torch.random.fork_rng(devices=fork_devices):
             torch.manual_seed(cfg["VAL_SEED"])
             if device.type == "cuda":
@@ -1597,7 +1602,10 @@ def main():
     cfg = _build_cfg_from_globals()
 
     set_seed(cfg["SEED"])
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device(f"cuda:{torch.cuda.current_device()}")
+    else:
+        device = torch.device("cpu")
     save_dir = _Path(cfg["SAVE_DIR"]).resolve()
     save_dir.mkdir(parents=True, exist_ok=True)
 
