@@ -1,36 +1,4 @@
 #!/usr/bin/env python3
-"""
-CondDiff-AMO — SINGLE-FILE self-contained training script.
-No-UST ablation variant: direct Gaussian corruption of M_a.
-
-MỤC TIÊU:
-    Copy 1 file này sang server trường là chạy được.
-    KHÔNG cần config.py riêng, KHÔNG cần src/ folder.
-    Chỉ cần chỉnh CONFIG ở section ngay dưới đây, rồi:  python train_all_in_one.py
-
-REPRODUCE:
-    This no-UST ablation differs from the UST baseline by setting USE_UST_FORWARD=False.
-    The Gaussian schedule and model/loss configuration are otherwise retained.
-
-    Baseline reference settings are:
-        - DA-UST exponential gamma=5, beta_min=0
-        - Gaussian schedule (1e-5, 2e-3)
-        - DN v2 (UNetDenoisingNetwork) nhận (x_t, t, feats, M_v)
-        - Fixed-corruption validation t=T-1, VAL_SEED=12345
-        - sqrt(u) timestep sampling
-        - weight_decay=5e-2
-
-STABILITY MODIFICATIONS (không có trong notebook gốc, CÓ THỂ TẮT):
-    - Grad clipping 1.0  → set GRAD_CLIP_NORM = None để tắt
-    - Deterministic validation fork_rng → set FORK_RNG_VALIDATION = False để tắt
-    - dataset filtering (filter_degenerate/fully_occluded) → default False = giữ nguyên notebook
-
-USAGE:
-    python train_all_in_one.py
-    python train_all_in_one.py --data-root /mnt/ssd/data
-    python train_all_in_one.py --resume /path/to/best_miou_ckpt.pth
-    python train_all_in_one.py --max-hours 6 --epochs 20
-"""
 
 # ============================================================================
 # ============================================================================
@@ -42,7 +10,7 @@ from pathlib import Path as _Path
 _PROJECT_ROOT = _Path(__file__).resolve().parent
 
 # ---- 1. EXPERIMENT ----
-EXPERIMENT_MODE = "zero-shot"      # "supervised" | "zero-shot"
+EXPERIMENT_MODE = "supervised"      # "supervised" | "zero-shot"
 STRATEGY_NAME   = "exponential"     # UST scheduler type (used only when USE_UST_FORWARD=True)
 USE_UST_FORWARD = False              # False: direct Gaussian corruption of M_a; True: UST + Gaussian
 DN_VARIANT      = "new"             # "old" (DNv1) | "new" (DNv2 U-Net)
